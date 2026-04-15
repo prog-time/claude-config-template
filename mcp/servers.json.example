@@ -1,11 +1,21 @@
 {
   "mcpServers": {
-    "project-agent": {
-      "command": "uvx",
-      "args": ["project-agent-mcp"],
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "<ABSOLUTE_PATH_TO_YOUR_DIRECTORY>"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
       "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
-        "PROJECTS_CONFIG": "${HOME}/.config/project-agent/projects.yaml"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_GITHUB_TOKEN>"
       }
     }
   }

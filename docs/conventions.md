@@ -1,81 +1,109 @@
-# Соглашения
+# Conventions
 
-## Структура скила
+## Skill structure
 
-```
+```text
 skills/<name>/
-├── SKILL.md      обязательный, для модели
-├── README.md     обязательный, для людей
-├── scripts/      опционально: вспомогательные скрипты
-├── references/   опционально: дополнительные .md, на которые ссылается SKILL.md
-└── assets/       опционально: шаблоны, изображения, фикстуры
+├── SKILL.md      required, for the model
+├── README.md     required, for humans
+├── scripts/      optional: helper scripts
+├── references/   optional: extra .md files referenced from SKILL.md
+└── assets/       optional: templates, images, fixtures
 ```
 
-## Frontmatter `SKILL.md`
+## `SKILL.md` frontmatter
 
 ```yaml
 ---
-name: <kebab-case, совпадает с именем папки>
+name: <kebab-case, matches the directory name>
 description: >
-  Что делает скил и КОГДА его триггерить. Пиши как набор сигналов, а не общее
-  описание. Включай типичные формулировки пользователя на всех языках, которые
-  поддерживаешь.
-model: sonnet         # опционально
-allowed-tools:        # опционально, если хотим ограничить
+  What the skill does and WHEN to trigger it. Write it as a set of signals,
+  not a general description. Include typical user phrasings in every language
+  you support.
+model: sonnet         # optional
+allowed-tools:        # optional, if you want to restrict
   - Read
   - Grep
 ---
 ```
 
-Правила:
+Rules:
 
-- `description` — главный триггер. Если скил не активируется, проблема почти
-  всегда здесь.
-- Лимит `description` — 1024 символа. Линтер поймает превышение.
-- Имя в frontmatter совпадает с именем папки (для агентов — с именем файла).
+- `description` is the primary trigger. If the skill does not activate, the
+  problem is almost always here.
+- `description` limit is 1024 characters. The linter will catch overruns.
+- The name in frontmatter matches the directory name (for agents — the
+  file name).
 
-## Frontmatter агента
+## Agent frontmatter
 
 ```yaml
 ---
-name: <kebab-case, совпадает с именем файла без .md>
+name: <kebab-case, matches the file name without .md>
 description: >
-  Что делает агент. Используется самим Claude при выборе сабагента.
-tools: Bash, Read, Edit, Write   # явный список разрешённых инструментов
-model: sonnet                     # opus для оркестраторов, sonnet — обычно
+  What the agent does. Used by Claude itself when selecting a sub-agent.
+tools: Bash, Read, Edit, Write   # explicit list of allowed tools
+model: sonnet                     # opus for orchestrators, sonnet is the usual default
 ---
 ```
 
-## Содержимое `SKILL.md`
+## `SKILL.md` content
 
-- Пиши инструкции в повелительном наклонении: «Сделай», «Не делай».
-- Чёткие «Что делать» и «Чего НЕ делать» — короткие списки лучше длинных
-  абзацев.
-- Если есть шаги — нумеруй.
-- Примеры — с реальными формулировками пользователя.
+- Write instructions in the imperative: "Do", "Do not".
+- Clear "What to do" and "What NOT to do" — short lists beat long paragraphs.
+- If there are steps, number them.
+- Provide examples with realistic user phrasings.
 
-## Содержимое `README.md` (для GitHub)
+## `README.md` content (for GitHub)
 
-Цель — чтобы человек, открывший репо, за 30 секунд понял, что делает скил.
-Минимум: триггеры, зависимости, пример использования. Без копирования
-содержимого SKILL.md.
+The goal is for anyone opening the repo to understand what the skill does in
+30 seconds. Minimum: triggers, dependencies, usage example. Do not copy
+content from SKILL.md.
 
-## Коммиты
+## Commits
 
 [Conventional Commits](https://www.conventionalcommits.org):
 
-```
+```text
 feat(skills): add code-reviewer skill
 fix(agents): correct tool list for commit agent
 docs: update README install section
 chore(ci): bump setup-python to v5
 ```
 
-Скоупы: `skills`, `agents`, `commands`, `mcp`, `hooks`, `scripts`, `docs`, `ci`.
+Scopes: `skills`, `agents`, `commands`, `mcp`, `hooks`, `scripts`, `docs`, `ci`.
 
-## Языки
+## Linter (`scripts/lint_skills.py`)
 
-- README, docs, CHANGELOG — русский.
-- Frontmatter, имена файлов и папок, комментарии в скриптах — английский.
-- Содержимое SKILL.md — на том языке, на котором пользователь чаще всего
-  обращается к скилу.
+Runs via `make lint`. Checks:
+
+- presence and correctness of frontmatter (`name`, `description`) in all
+  `SKILL.md` and `agents/*.md`;
+- length of `description` (1024-character limit);
+- that `name` in frontmatter matches the directory/file name.
+
+Additionally scans files in `skills/`, `agents/`, `commands/`, `hooks/` for
+**hardcoded values** (warnings, not errors):
+
+| What we look for | Example |
+|------------------|---------|
+| Absolute paths | `/Users/you/projects` |
+| Email addresses | `you@example.com` |
+| GitHub PAT | `ghp_...` |
+| OpenAI key | `sk-...` |
+| Bearer token | `Bearer abc123` |
+
+Strict mode — warnings become errors:
+
+```bash
+python3 scripts/lint_skills.py --strict
+```
+
+## Languages
+
+- README, docs, CHANGELOG — English by default. A Russian translation of the
+  README is kept at `README.ru.md`; forks may add other translations as
+  additional `README.<lang>.md` files.
+- Frontmatter, file and directory names, comments in scripts — English.
+- `SKILL.md` content — in the language(s) the user most often uses to invoke
+  the skill. Include trigger phrases in every supported language.

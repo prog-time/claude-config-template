@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Создаёт скелет нового скила: skills/<name>/SKILL.md + README.md
+# Creates the skeleton for a new skill: skills/<name>/SKILL.md + README.md
 set -euo pipefail
 
 NAME="${1:-}"
-DESC="${2:-TODO: описание триггеров и поведения}"
+DESC="${2:-TODO: describe triggers and behaviour}"
 
 if [[ -z "$NAME" ]]; then
   echo "usage: $0 <skill-name> [\"description\"]"
@@ -14,7 +14,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIR="$REPO/skills/$NAME"
 
 if [[ -e "$DIR" ]]; then
-  echo "skill '$NAME' уже существует: $DIR"
+  echo "skill '$NAME' already exists: $DIR"
   exit 1
 fi
 
@@ -29,13 +29,14 @@ description: >
 
 # $NAME
 
-TODO: опиши, что делает скил, когда триггерится и какой даёт результат.
+TODO: describe what the skill does, when it triggers, and what output it
+produces.
 
-## Когда срабатывает
+## When it triggers
 
 - TODO
 
-## Что делать
+## What to do
 
 1. TODO
 EOF
@@ -45,15 +46,15 @@ cat > "$DIR/README.md" <<EOF
 
 $DESC
 
-## Установка
+## Installation
 
-Подхватывается автоматически после \`make install\` в корне репозитория.
+Picked up automatically after \`make install\` at the repository root.
 
-## Использование
+## Usage
 
-TODO: примеры запросов от пользователя.
+TODO: example user requests.
 EOF
 
-echo "создан skills/$NAME/"
+echo "created skills/$NAME/"
 echo "  - SKILL.md"
 echo "  - README.md"

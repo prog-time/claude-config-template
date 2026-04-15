@@ -6,10 +6,17 @@ Checks:
 - has required keys (`name`, `description`)
 - `description` length is within Claude's limit (1024 chars)
 - `name` matches the directory name (for skills) or file stem (for agents)
+- no hardcoded values (absolute paths, emails, tokens) in skills/, agents/,
+  commands/, and hooks/ files
+
+Usage:
+  python3 scripts/lint_skills.py           # warnings are informational only
+  python3 scripts/lint_skills.py --strict  # warnings become errors (exit 1)
 """
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -18,6 +25,36 @@ MAX_DESCRIPTION = 1024
 
 errors: list[str] = []
 warnings: list[str] = []
+
+# ---------------------------------------------------------------------------
+# Hardcoded-value patterns (warn level)
+# ---------------------------------------------------------------------------
+
+HARDCODED_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("absolute path", re.compile(r"/(Users|home|opt|root)/[a-zA-Z]")),
+    ("email address", re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")),
+    ("GitHub PAT", re.compile(r"ghp_[A-Za-z0-9]{36}")),
+    ("OpenAI key", re.compile(r"sk-[A-Za-z0-9]{48}")),
+    ("Bearer token", re.compile(r"Bearer\s+[A-Za-z0-9\-_\.]+")),
+]
+
+
+def check_hardcoded_values(path: Path) -> None:
+    """Scan file lines for hardcoded values and append to warnings."""
+    rel = path.relative_to(REPO)
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return
+    for lineno, line in enumerate(lines, start=1):
+        for label, pattern in HARDCODED_PATTERNS:
+            if pattern.search(line):
+                warnings.append(f"{rel}:{lineno}: possible {label}")
+
+
+# ---------------------------------------------------------------------------
+# Frontmatter parser
+# ---------------------------------------------------------------------------
 
 
 def parse_frontmatter(text: str) -> dict[str, str] | None:
@@ -69,6 +106,11 @@ def parse_frontmatter(text: str) -> dict[str, str] | None:
     return data
 
 
+# ---------------------------------------------------------------------------
+# Per-file checks
+# ---------------------------------------------------------------------------
+
+
 def check_skill(path: Path) -> None:
     rel = path.relative_to(REPO)
     text = path.read_text(encoding="utf-8")
@@ -107,18 +149,36 @@ def check_agent(path: Path) -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
 def main() -> int:
+    strict = "--strict" in sys.argv
+
     skills_dir = REPO / "skills"
     agents_dir = REPO / "agents"
 
     skill_files = sorted(skills_dir.glob("*/SKILL.md"))
     agent_files = sorted(agents_dir.glob("*.md"))
 
+    # Directories to scan for hardcoded values
+    scan_dirs = ["skills", "agents", "commands", "hooks"]
+
     print(f"Linting {len(skill_files)} skill(s) and {len(agent_files)} agent(s)…")
     for p in skill_files:
         check_skill(p)
     for p in agent_files:
         check_agent(p)
+
+    # Hardcoded-value scan across all content directories
+    for dirname in scan_dirs:
+        scan_root = REPO / dirname
+        if scan_root.is_dir():
+            for p in sorted(scan_root.rglob("*")):
+                if p.is_file():
+                    check_hardcoded_values(p)
 
     for w in warnings:
         print(f"warn: {w}")
@@ -128,6 +188,11 @@ def main() -> int:
     if errors:
         print(f"\n{len(errors)} error(s), {len(warnings)} warning(s).")
         return 1
+
+    if strict and warnings:
+        print(f"\n0 error(s), {len(warnings)} warning(s) — treated as errors (--strict).")
+        return 1
+
     print(f"OK ({len(warnings)} warning(s)).")
     return 0
 

@@ -1,81 +1,79 @@
-# claude-config
+# claude-config-template
 
-Личный конфиг для [Claude Code](https://docs.claude.com/en/docs/claude-code) и
-[Cowork](https://www.anthropic.com/) — скилы, агенты, slash-команды, MCP-конфиги
-и хуки в одном версионируемом репозитории.
+> Russian: [README.ru.md](README.ru.md)
 
-Этот репозиторий монтируется в `~/.claude/` через симлинки. Любое изменение в
-репо мгновенно подхватывается Claude — не нужно копировать файлы вручную.
+A template repository for your personal [Claude Code](https://docs.claude.com/en/docs/claude-code)
+configuration. Fork it, fill it with your own skills and agents — the skeleton and tooling are
+already in place.
 
-## Содержание
+The repository is intentionally **empty**: there are no ready-made skills or agents — only a
+directory structure, Makefile, linter, install script, and minimal example stubs. All content
+is added by you.
 
+## Requirements
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| `claude` CLI | any | runtime environment |
+| Python | 3.12+ | `scripts/lint_skills.py` and CI |
+| `gh` CLI | any | optional, useful for GitHub-integrated skills |
+
+## Structure
+
+```text
+skills/      user-defined skills (SKILL.md + resources)
+agents/      sub-agents (individual .md files with frontmatter)
+commands/    slash commands
+mcp/         MCP server config examples
+hooks/       PreToolUse / PostToolUse hooks, etc.
+docs/        conventions, guides, changelog
+scripts/     utilities: linter, new-skill generator
 ```
-skills/      пользовательские скилы (SKILL.md + ресурсы)
-agents/      сабагенты (отдельные .md с frontmatter)
-commands/    slash-команды
-mcp/         примеры конфигов MCP-серверов
-hooks/       PreToolUse / PostToolUse и т. п.
-docs/        соглашения, гайды, changelog
-scripts/     утилиты: линтер, генератор нового скила
-```
 
-## Быстрый старт
+The repository is mounted into `~/.claude/` via symlinks. Any change in the repo is
+picked up by Claude immediately — no manual file copying needed.
+
+## First steps after forking
+
+1. **Update LICENSE** — replace the author name and year in the `Copyright` line.
+2. **Install** — run `make install` to create symlinks in `~/.claude/`.
+3. **Add your skills** — use `make new-skill name=<slug> desc="..."`.
+4. **Add your agents** — create a `.md` file in `agents/` following the `agents/example.md` stub.
+5. **Check your installation** — `make doctor` diagnoses symlinks, tool versions, and configs.
+6. **Validate files** — `make lint` checks frontmatter in all skills and agents.
+
+## Quick start
 
 ```bash
+# Fork the repository on GitHub, then:
 git clone git@github.com:<you>/claude-config.git ~/code/claude-config
 cd ~/code/claude-config
-make install        # симлинки в ~/.claude
-make lint           # проверка SKILL.md
+make install        # symlinks into ~/.claude
+make lint           # validate SKILL.md and agents/*.md
 ```
 
-Удаление:
+To uninstall:
 
 ```bash
-make uninstall      # снимает только наши симлинки, встроенные скилы Anthropic не трогает
+make uninstall      # removes only our symlinks, does not touch Anthropic built-ins
 ```
 
-## Что внутри
-
-### Скилы
-
-| Скил | Что делает |
-|---|---|
-| [`commit`](skills/commit) | Делегирует git-коммиты агенту `commit`. Поддерживает `commit ru`, `commit file1 file2`. |
-| [`task-creator`](skills/task-creator) | Создаёт задачу как локальный draft + GitHub Issue через MCP `project-agent`. |
-| [`team-lead-router`](skills/team-lead-router) | Маршрутизирует все задачи, связанные с кодом, к агенту `team-lead`. |
-
-### Агенты
-
-| Агент | Назначение |
-|---|---|
-| [`commit`](agents/commit.md) | Анализирует diff, бьёт изменения на атомарные коммиты, генерирует сообщения. |
-| [`team-lead`](agents/team-lead.md) | Оркестратор: разбирает задачу, поднимает специализированных агентов, собирает результат. |
-
-## Соглашения
-
-Подробности в [`docs/conventions.md`](docs/conventions.md). Кратко:
-
-- один скил — одна папка `skills/<name>/` с `SKILL.md` (для модели) и `README.md` (для людей);
-- frontmatter `SKILL.md` — `name`, `description`, опционально `model`, `allowed-tools`;
-- `description` — основной триггер для активации, держим под 1024 символа;
-- агенты — отдельные `.md` в `agents/`, переиспользуются между скилами;
-- коммиты — [Conventional Commits](https://www.conventionalcommits.org/);
-- комментарии в коде и frontmatter — на английском, README и docs — на русском.
-
-## Разработка нового скила
+## Adding a new skill
 
 ```bash
-./scripts/new_skill.sh my-skill "Короткое описание"
+make new-skill name=my-skill desc="Short description"
 $EDITOR skills/my-skill/SKILL.md
 make lint
-git add skills/my-skill && git commit -m "feat(skills): add my-skill"
 ```
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`docs/conventions.md`](docs/conventions.md) for
+the full workflow and frontmatter specification.
 
 ## CI
 
-GitHub Actions запускает `scripts/lint_skills.py` на каждый push и PR — проверяет,
-что у каждого `SKILL.md` валидный frontmatter и описание не превышает лимит.
+GitHub Actions runs `scripts/lint_skills.py` on every push and PR — it verifies that every
+`SKILL.md` has valid frontmatter and that the description does not exceed the length limit.
 
-## Лицензия
+## License
 
 [MIT](LICENSE)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Создаёт/удаляет симлинки из репозитория в ~/.claude/.
-# Безопасно: трогает только то, что есть в репо. Встроенные скилы Anthropic не затрагиваются.
+# Creates/removes symlinks from the repository into ~/.claude/.
+# Safe: only touches what exists in the repo. Anthropic built-in skills are left alone.
 
 set -euo pipefail
 
@@ -18,8 +18,8 @@ for arg in "$@"; do
       cat <<EOF
 Usage: $0 [--dry-run] [--uninstall]
 
-  --dry-run     показать действия без изменений
-  --uninstall   удалить ранее созданные симлинки
+  --dry-run     show actions without making changes
+  --uninstall   remove previously created symlinks
 EOF
       exit 0
       ;;
@@ -27,7 +27,7 @@ EOF
   esac
 done
 
-# Категории, которые мы линкуем поэлементно (не всю папку целиком, чтобы не конфликтовать со встроенными)
+# Categories that we symlink entry-by-entry (not the whole folder, to avoid clashing with built-ins)
 CATEGORIES=(skills agents commands hooks)
 
 log() { printf "%s\n" "$*"; }
@@ -52,14 +52,14 @@ link_one() {
     local current
     current="$(readlink "$dst")"
     if [[ "$current" == "$src" ]]; then
-      log "  = $dst (уже)"
+      log "  = $dst (already linked)"
       return
     fi
-    log "  ! $dst — это симлинк, но указывает на '$current'. Пропускаю."
+    log "  ! $dst is a symlink, but points to '$current'. Skipping."
     return
   fi
   if [[ -e "$dst" ]]; then
-    log "  ! $dst существует и не симлинк. Пропускаю."
+    log "  ! $dst exists and is not a symlink. Skipping."
     return
   fi
   run "ln -s '$src' '$dst'"
@@ -77,7 +77,7 @@ unlink_one() {
       return
     fi
   fi
-  log "  · $dst пропущен (не наш симлинк)"
+  log "  · $dst skipped (not our symlink)"
 }
 
 process_category() {
@@ -118,4 +118,10 @@ for cat in "${CATEGORIES[@]}"; do
 done
 
 log ""
-log "Готово."
+log "Done."
+
+# Remind the user to update LICENSE if it still contains the template placeholder name.
+if [[ $UNINSTALL -eq 0 ]] && grep -q "TODO (after fork)" "$REPO/LICENSE" 2>/dev/null; then
+  log ""
+  log "REMINDER: update LICENSE — replace the author name and year in the Copyright line."
+fi
