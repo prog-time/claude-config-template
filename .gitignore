@@ -1,0 +1,30 @@
+# Claude runtime data — никогда не коммитим
+.claude.json
+sessions/
+projects/
+session-env/
+shell-snapshots/
+backups/
+
+# Локальные секреты
+.env
+*.local
+mcp/servers.json
+!mcp/servers.json.example
+
+# OS / редакторы
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.log
+
+# Python (для scripts/)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/

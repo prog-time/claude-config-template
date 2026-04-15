@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "project-agent": {
+      "command": "uvx",
+      "args": ["project-agent-mcp"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "PROJECTS_CONFIG": "${HOME}/.config/project-agent/projects.yaml"
+      }
+    }
+  }
+}
