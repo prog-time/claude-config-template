@@ -5,9 +5,9 @@ Checks:
 - file starts with a YAML frontmatter delimited by ---
 - has required keys (`name`, `description`)
 - `description` length is within Claude's limit (1024 chars)
-- `name` matches the directory name (for skills) or file stem (for agents)
+- `name` matches the directory name (for skills) or file stem (for agents) — ERROR if mismatched
 - no hardcoded values (absolute paths, emails, tokens) in skills/, agents/,
-  commands/, and hooks/ files
+  commands/, and hooks/ files (warnings)
 
 Usage:
   python3 scripts/lint_skills.py           # warnings are informational only
@@ -127,7 +127,7 @@ def check_skill(path: Path) -> None:
         )
     expected = path.parent.name
     if fm.get("name") and fm["name"] != expected:
-        warnings.append(
+        errors.append(
             f"{rel}: frontmatter name '{fm['name']}' != directory '{expected}'"
         )
 
@@ -144,7 +144,7 @@ def check_agent(path: Path) -> None:
             errors.append(f"{rel}: missing required key '{key}'")
     expected = path.stem
     if fm.get("name") and fm["name"] != expected:
-        warnings.append(
+        errors.append(
             f"{rel}: frontmatter name '{fm['name']}' != filename '{expected}'"
         )
 
