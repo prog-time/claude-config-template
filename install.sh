@@ -120,6 +120,28 @@ done
 log ""
 log "Done."
 
+# ---------------------------------------------------------------------------
+# Pre-push hook installation (optional)
+# ---------------------------------------------------------------------------
+GIT_HOOKS_DIR="$REPO/.git/hooks"
+PRE_PUSH_SRC="$REPO/linting/pre-push-check.sh"
+PRE_PUSH_DST="$GIT_HOOKS_DIR/pre-push"
+
+if [[ $UNINSTALL -eq 1 ]]; then
+  if [[ -L "$PRE_PUSH_DST" ]]; then
+    _current="$(readlink "$PRE_PUSH_DST")"
+    if [[ "$_current" == "$PRE_PUSH_SRC" ]]; then
+      run "rm '$PRE_PUSH_DST'"
+      log "[hooks] - pre-push symlink removed"
+    fi
+  fi
+else
+  if [[ -f "$PRE_PUSH_SRC" ]] && [[ -d "$GIT_HOOKS_DIR" ]]; then
+    log "[hooks]"
+    link_one "$PRE_PUSH_SRC" "$PRE_PUSH_DST"
+  fi
+fi
+
 # Remind the user to update LICENSE if it still contains the template placeholder name.
 if [[ $UNINSTALL -eq 0 ]] && grep -q "TODO (after fork)" "$REPO/LICENSE" 2>/dev/null; then
   log ""
