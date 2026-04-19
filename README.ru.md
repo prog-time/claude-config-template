@@ -67,6 +67,33 @@ make lint
 
 Подробнее — в [`CONTRIBUTING.md`](CONTRIBUTING.md) и [`docs/conventions.md`](docs/conventions.md).
 
+## Локальные проверки и pre-push
+
+Директория `linting/` содержит хук pre-push, который запускает те же проверки, что и CI:
+shellcheck, markdownlint и yamllint.
+
+**Включить хук pre-push** — `make install` делает это автоматически, создавая симлинк
+в `.git/hooks/`. Ручная установка:
+
+```bash
+cp linting/pre-push-check.sh .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+Запустить проверки напрямую без установки хука:
+
+```bash
+bash linting/pre-push-check.sh
+```
+
+Также есть хук `prepare-commit-msg`, который дописывает список изменённых файлов
+в сообщение коммита. Активация:
+
+```bash
+cp linting/prepare-commit-msg-check.sh .git/hooks/prepare-commit-msg
+chmod +x .git/hooks/prepare-commit-msg
+```
+
 ## CI
 
 GitHub Actions запускает `scripts/lint_skills.py` на каждый push и PR — проверяет,

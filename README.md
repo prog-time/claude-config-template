@@ -69,6 +69,33 @@ make lint
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`docs/conventions.md`](docs/conventions.md) for
 the full workflow and frontmatter specification.
 
+## Local checks and pre-push
+
+The `linting/` directory provides a pre-push hook that runs the same checks as CI locally:
+shellcheck, markdownlint, and yamllint.
+
+**Enable the pre-push hook** — `make install` does this automatically by creating a symlink
+in `.git/hooks/`. To set it up manually:
+
+```bash
+cp linting/pre-push-check.sh .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+Run the checks directly without installing the hook:
+
+```bash
+bash linting/pre-push-check.sh
+```
+
+There is also a `prepare-commit-msg` hook that appends a file-change summary to your commit
+message. To activate it:
+
+```bash
+cp linting/prepare-commit-msg-check.sh .git/hooks/prepare-commit-msg
+chmod +x .git/hooks/prepare-commit-msg
+```
+
 ## CI
 
 GitHub Actions runs `scripts/lint_skills.py` on every push and PR — it verifies that every
