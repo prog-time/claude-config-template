@@ -104,6 +104,36 @@ Full specification: [`docs/conventions.md`](docs/conventions.md).
 
 ---
 
+## Local checks and pre-push
+
+The `linting/` directory contains a `pre-push-check.sh` orchestrator that runs shellcheck,
+markdownlint, and yamllint — the same set as CI. Enable it so errors are caught before
+pushing.
+
+**Automatic setup** — running `make install` creates a symlink in `.git/hooks/pre-push`
+automatically. If you prefer manual setup:
+
+```bash
+cp linting/pre-push-check.sh .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+Run checks directly at any time:
+
+```bash
+bash linting/pre-push-check.sh
+```
+
+There is also an optional `prepare-commit-msg` hook that appends a list of staged files
+to the commit message:
+
+```bash
+cp linting/prepare-commit-msg-check.sh .git/hooks/prepare-commit-msg
+chmod +x .git/hooks/prepare-commit-msg
+```
+
+---
+
 ## CI
 
 GitHub Actions runs `scripts/lint_skills.py` on every push and PR.
