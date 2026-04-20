@@ -330,7 +330,8 @@ jobs:
       - name: Run install.sh into isolated CLAUDE_HOME
         run: |
           set -euo pipefail
-          export CLAUDE_HOME="$(mktemp -d)"
+          CLAUDE_HOME="$(mktemp -d)"
+          export CLAUDE_HOME
           echo "CLAUDE_HOME=$CLAUDE_HOME" >> "$GITHUB_ENV"
 
           bash install.sh
