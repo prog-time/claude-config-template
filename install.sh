@@ -35,14 +35,14 @@ run() {
   if [[ $DRY_RUN -eq 1 ]]; then
     log "DRY: $*"
   else
-    eval "$@"
+    "$@"
   fi
 }
 
 ensure_dir() {
   local dir="$1"
   if [[ ! -d "$dir" ]]; then
-    run "mkdir -p '$dir'"
+    run mkdir -p "$dir"
   fi
 }
 
@@ -62,7 +62,7 @@ link_one() {
     log "  ! $dst exists and is not a symlink. Skipping."
     return
   fi
-  run "ln -s '$src' '$dst'"
+  run ln -s "$src" "$dst"
   log "  + $dst -> $src"
 }
 
@@ -72,7 +72,7 @@ unlink_one() {
     local current
     current="$(readlink "$dst")"
     if [[ "$current" == "$src" ]]; then
-      run "rm '$dst'"
+      run rm "$dst"
       log "  - $dst"
       return
     fi
@@ -131,7 +131,7 @@ if [[ $UNINSTALL -eq 1 ]]; then
   if [[ -L "$PRE_PUSH_DST" ]]; then
     _current="$(readlink "$PRE_PUSH_DST")"
     if [[ "$_current" == "$PRE_PUSH_SRC" ]]; then
-      run "rm '$PRE_PUSH_DST'"
+      run rm "$PRE_PUSH_DST"
       log "[hooks] - pre-push symlink removed"
     fi
   fi
