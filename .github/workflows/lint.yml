@@ -195,3 +195,99 @@ jobs:
         run: pip install codespell
       - name: Run codespell
         run: codespell skills/ agents/ docs/ README.md README.ru.md CONTRIBUTING.md
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 scans the full commit history of the PR, not just HEAD.
+          # This is intentional — gitleaks is most useful when it can see all commits
+          # in a PR, not just the latest one. The template repo is small, so this is fast.
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE is not required for open-source repositories.
+
+  json-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install jsonschema
+        run: pip install jsonschema
+      - name: Syntax check — all JSON files
+        run: |
+          set -euo pipefail
+          ERROR_FOUND=0
+          # Collect all JSON files in tracked locations
+          mapfile -t json_files < <(find mcp/ -name "*.json" -o -name "*.example" \
+            | grep -E '\.(json|example)$' || true)
+          # .claude/settings*.json (settings.local.json is gitignored, not present in CI)
+          mapfile -t settings_files < <(find .claude/ -maxdepth 1 -name "settings*.json" \
+            2>/dev/null || true)
+          all_files=("${json_files[@]}" "${settings_files[@]}")
+          if [ ${#all_files[@]} -eq 0 ]; then
+            echo "No JSON files found — skipping syntax check."
+            exit 0
+          fi
+          for file in "${all_files[@]}"; do
+            echo "Syntax: $file"
+            if ! python3 -m json.tool "$file" > /dev/null 2>&1; then
+              python3 -m json.tool "$file" || true
+              echo "::error file=$file::JSON syntax error"
+              ERROR_FOUND=1
+            fi
+          done
+          if [ "$ERROR_FOUND" -ne 0 ]; then
+            echo "JSON syntax errors found."
+            exit 1
+          fi
+          echo "All JSON files passed syntax check."
+      - name: Schema check — .claude/settings*.json
+        run: |
+          set -euo pipefail
+          SCHEMA_URL="https://json.schemastore.org/claude-code-settings.json"
+          SCHEMA_FILE="$(mktemp)"
+          # Download schema (fail fast if unreachable — schema check is mandatory)
+          curl -sSfL "$SCHEMA_URL" -o "$SCHEMA_FILE"
+
+          ERROR_FOUND=0
+          mapfile -t settings_files < <(find .claude/ -maxdepth 1 -name "settings*.json" \
+            2>/dev/null || true)
+          if [ ${#settings_files[@]} -eq 0 ]; then
+            echo "No .claude/settings*.json found — schema check skipped."
+            exit 0
+          fi
+          for file in "${settings_files[@]}"; do
+            echo "Schema: $file"
+            python3 - "$file" "$SCHEMA_FILE" <<'PYEOF' || ERROR_FOUND=1
+          import json, sys, pathlib
+          try:
+              import jsonschema
+          except ImportError:
+              print("jsonschema not installed", file=sys.stderr)
+              sys.exit(1)
+
+          instance_path, schema_path = sys.argv[1], sys.argv[2]
+          instance = json.loads(pathlib.Path(instance_path).read_text())
+          schema = json.loads(pathlib.Path(schema_path).read_text())
+          try:
+              jsonschema.validate(instance=instance, schema=schema)
+          except jsonschema.ValidationError as e:
+              path = " -> ".join(str(p) for p in e.absolute_path)
+              print(f"Schema error in {instance_path}:", file=sys.stderr)
+              print(f"  Path: {path or '(root)'}", file=sys.stderr)
+              print(f"  Message: {e.message}", file=sys.stderr)
+              sys.exit(1)
+          PYEOF
+          done
+          if [ "$ERROR_FOUND" -ne 0 ]; then
+            echo "JSON schema errors found."
+            exit 1
+          fi
+          echo "All settings files passed schema check."
