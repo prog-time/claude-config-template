@@ -126,6 +126,9 @@ GitHub Actions runs the following checks on every push and PR:
   examples and docs are allowlisted in `.gitleaks.toml`
 - `json-validate` — syntax-checks all JSON files; validates `.claude/settings*.json` against
   the official Claude Code settings schema
+- **Security posture** — every workflow job declares `permissions: contents: read`;
+  every `uses:` is pinned to a 40-char commit SHA with a `# vX.Y.Z` comment; Dependabot
+  (see `.github/dependabot.yml`) opens weekly PRs to bump pins
 
 ## License
 
