@@ -107,16 +107,27 @@ Full specification: [`docs/conventions.md`](docs/conventions.md).
 ## Local checks and pre-push
 
 The `linting/` directory contains a `pre-push-check.sh` orchestrator that runs shellcheck,
-markdownlint, yamllint, ruff, shfmt, and codespell — the same set as CI. Enable it so errors
-are caught before pushing.
+markdownlint, yamllint, ruff, shfmt, codespell, JSON validation, and gitleaks secret scanning
+— the same set as CI. Enable it so errors are caught before pushing.
 
-Install the additional linters before your first push:
+Install the required linters before your first push:
 
 ```bash
-pip install ruff codespell          # Python linter + spell checker
-brew install shfmt                  # shell formatter (macOS)
+pip install ruff codespell jsonschema   # Python linter + spell checker + JSON schema validator
+brew install shfmt                      # shell formatter (macOS)
 # Linux / no brew: go install mvdan.cc/sh/v3/cmd/shfmt@latest
 ```
+
+Install `gitleaks` for optional local secret scanning:
+
+```bash
+brew install gitleaks          # macOS
+# Docker alternative: docker run zricethezav/gitleaks detect --source .
+```
+
+**JSON validation is mandatory** — the pre-push hook fails if `jsonschema` is not installed.
+**Secret scanning is optional** — if `gitleaks` is not installed, the hook prints a warning
+and continues. CI always runs gitleaks regardless of local setup.
 
 **Automatic setup** — running `make install` creates a symlink in `.git/hooks/pre-push`
 automatically. If you prefer manual setup:
@@ -144,13 +155,16 @@ chmod +x .git/hooks/prepare-commit-msg
 
 ## CI
 
-GitHub Actions runs `scripts/lint_skills.py` on every push and PR.
+GitHub Actions runs the following checks on every push and PR:
+`skills`, `shellcheck`, `markdownlint`, `yamllint`, `ruff`, `shfmt`, `codespell`,
+`gitleaks` (secret scan), and `json-validate` (syntax + schema).
 
 Reproduce locally:
 
 ```bash
 make lint           # standard check
 make check          # lint + dry-run install
+bash linting/pre-push-check.sh   # full pre-push suite including JSON + gitleaks
 ```
 
 ---

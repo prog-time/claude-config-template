@@ -20,6 +20,8 @@ is added by you.
 | `ruff` | any | Python linter (`pip install ruff`) |
 | `shfmt` | any | shell formatter (`brew install shfmt` or `go install mvdan.cc/sh/v3/cmd/shfmt@latest`) |
 | `codespell` | any | spell checker for docs (`pip install codespell`) |
+| `jsonschema` | any | JSON schema validator (`pip install jsonschema`) — required for pre-push |
+| `gitleaks` | any | secret scanner (`brew install gitleaks`) — optional for pre-push |
 
 ## Structure
 
@@ -75,7 +77,22 @@ the full workflow and frontmatter specification.
 ## Local checks and pre-push
 
 The `linting/` directory provides a pre-push hook that runs the same checks as CI locally:
-shellcheck, markdownlint, yamllint, ruff (Python), shfmt (shell formatter), and codespell (spell check).
+shellcheck, markdownlint, yamllint, ruff (Python), shfmt (shell formatter), codespell (spell
+check), JSON validation (mandatory), and gitleaks secret scanning (optional).
+
+**JSON validation is mandatory** — install `jsonschema` before your first push:
+
+```bash
+pip install jsonschema
+```
+
+**Secret scanning is optional** — if `gitleaks` is not installed, the pre-push hook prints a
+warning and continues. Install it to enable local secret scanning:
+
+```bash
+brew install gitleaks          # macOS
+# Docker alternative: docker run zricethezav/gitleaks detect --source .
+```
 
 **Enable the pre-push hook** — `make install` does this automatically by creating a symlink
 in `.git/hooks/`. To set it up manually:
@@ -101,8 +118,14 @@ chmod +x .git/hooks/prepare-commit-msg
 
 ## CI
 
-GitHub Actions runs `scripts/lint_skills.py` on every push and PR — it verifies that every
-`SKILL.md` has valid frontmatter and that the description does not exceed the length limit.
+GitHub Actions runs the following checks on every push and PR:
+
+- `skills` — `scripts/lint_skills.py` validates frontmatter in all skills and agents
+- `shellcheck` / `markdownlint` / `yamllint` / `ruff` / `shfmt` / `codespell` — code style
+- `gitleaks` — scans the full PR commit history for secrets; placeholder values in `mcp/`
+  examples and docs are allowlisted in `.gitleaks.toml`
+- `json-validate` — syntax-checks all JSON files; validates `.claude/settings*.json` against
+  the official Claude Code settings schema
 
 ## License
 
