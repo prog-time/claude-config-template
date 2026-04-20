@@ -1,0 +1,5 @@
+[codespell]
+# Exclude directories that may contain intentional non-English words or generated content
+skip = tasks,.git
+# Add false-positive words here (comma-separated), e.g.:
+# ignore-words-list = foo,ba
