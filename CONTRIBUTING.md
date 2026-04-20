@@ -107,8 +107,16 @@ Full specification: [`docs/conventions.md`](docs/conventions.md).
 ## Local checks and pre-push
 
 The `linting/` directory contains a `pre-push-check.sh` orchestrator that runs shellcheck,
-markdownlint, and yamllint — the same set as CI. Enable it so errors are caught before
-pushing.
+markdownlint, yamllint, ruff, shfmt, and codespell — the same set as CI. Enable it so errors
+are caught before pushing.
+
+Install the additional linters before your first push:
+
+```bash
+pip install ruff codespell          # Python linter + spell checker
+brew install shfmt                  # shell formatter (macOS)
+# Linux / no brew: go install mvdan.cc/sh/v3/cmd/shfmt@latest
+```
 
 **Automatic setup** — running `make install` creates a symlink in `.git/hooks/pre-push`
 automatically. If you prefer manual setup:

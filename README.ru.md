@@ -16,6 +16,9 @@
 | `claude` CLI | любая | основная среда исполнения |
 | Python | 3.12+ | `scripts/lint_skills.py` и CI |
 | `gh` CLI | любая | опционально, для скилов с интеграцией GitHub |
+| `ruff` | любая | линтер Python (`pip install ruff`) |
+| `shfmt` | любая | форматтер bash-скриптов (`brew install shfmt` или `go install mvdan.cc/sh/v3/cmd/shfmt@latest`) |
+| `codespell` | любая | проверка опечаток в документации (`pip install codespell`) |
 
 ## Структура
 
@@ -70,7 +73,7 @@ make lint
 ## Локальные проверки и pre-push
 
 Директория `linting/` содержит хук pre-push, который запускает те же проверки, что и CI:
-shellcheck, markdownlint и yamllint.
+shellcheck, markdownlint, yamllint, ruff (линтер Python), shfmt (форматтер bash) и codespell (проверка опечаток).
 
 **Включить хук pre-push** — `make install` делает это автоматически, создавая симлинк
 в `.git/hooks/`. Ручная установка:
