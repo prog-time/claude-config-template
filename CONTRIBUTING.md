@@ -158,9 +158,11 @@ chmod +x .git/hooks/prepare-commit-msg
 GitHub Actions runs the following checks on every push and PR:
 `skills`, `shellcheck`, `markdownlint`, `yamllint`, `ruff`, `shfmt`, `codespell`,
 `gitleaks` (secret scan), `json-validate` (syntax + schema), `install-e2e`
-(real install run), and `link-check` (Markdown link validation).
+(real install run), `link-check` (Markdown link validation),
+`branch-policy` (PR branch name validation), and `lint-commands`
+(`commands/task_*.md` structural check per `_contract.md` §6).
 
-Two content-integrity jobs run in CI only — they are not part of the pre-push hook:
+Three content-integrity and policy jobs run in CI only — they are not part of the pre-push hook:
 
 - **`install-e2e`** — runs `install.sh` for real into an isolated `CLAUDE_HOME=$(mktemp -d)`,
   asserts every symlink in `skills/`, `agents/`, `commands/`, `hooks/` is created,
@@ -174,6 +176,18 @@ Two content-integrity jobs run in CI only — they are not part of the pre-push 
   `.markdown-link-check.json`. Not in pre-push: network calls in pre-push are out of scope.
   When adding `.md` files with placeholder links (e.g. `<YOUR_REPO_URL>`), add a matching
   pattern to `.markdown-link-check.json` so the CI job does not treat them as broken links.
+- **`branch-policy`** — PR-only job that validates `github.head_ref` against the pattern
+  `^issues-[0-9]+$`. Fails fast with a descriptive message if the branch name does not match.
+  PRs from external forks can be allowed through by adding the `skip-branch-policy` label
+  (maintainer creates this label once in repository settings). Not triggered on `push` to
+  `main` (no `head_ref` on direct pushes).
+- **`lint-commands`** — runs `scripts/lint_commands.py` to validate the structural anatomy
+  of every `commands/task_*.md` file per `_contract.md` §6: checks for the `# /task_*`
+  H1 heading, a `_contract.md` reference in the first body paragraph, and required blocks
+  (`**Preconditions:**`, `**Action:**`, `**Failure modes:**`, `**Invariants after:**`) in
+  every `### Step` section. Exits 0 if no command files are present (safe for forks that
+  have not yet added any commands). Not in pre-push: the template ships with an empty
+  `commands/` directory, so local linting adds no value until commands are installed.
 
 Reproduce locally:
 
@@ -187,6 +201,26 @@ When adding a new GitHub Action, pin it to a 40-char commit SHA with a `# vX.Y.Z
 comment (e.g. `uses: owner/action@<sha> # v1.2.3`). Dependabot will keep the pin
 fresh via weekly PRs. Declare per-job `permissions: contents: read` so forks inherit
 a safe default `GITHUB_TOKEN` scope.
+
+---
+
+## Branch naming policy
+
+All contribution branches must follow the pattern `issues-{N}` where `{N}` is the linked
+GitHub Issue number (e.g. `issues-42`). The CI job `branch-policy` enforces this on every PR:
+
+- A PR from `feature/foo` or `fix/bar` will fail the `branch-policy` check.
+- If you are contributing from a fork and cannot rename the branch (e.g. you opened the PR
+  before reading this), ask a maintainer to add the `skip-branch-policy` label to your PR.
+  The maintainer creates this label once in the repository settings; it is not in the repo code.
+
+Quick start for contributors:
+
+```bash
+git checkout -b issues-42    # N = the GitHub Issue number for your task
+git push -u origin issues-42
+# open PR — branch-policy will pass
+```
 
 ---
 

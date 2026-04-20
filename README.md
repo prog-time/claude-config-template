@@ -134,6 +134,10 @@ GitHub Actions runs the following checks on every push and PR:
   `docs/**/*.md`, `skills/**/*.md`, `agents/**/*.md` using `markdown-link-check`;
   `tasks/**` is excluded; ignore patterns and retry policy are in `.markdown-link-check.json`;
   not run in the pre-push hook (network calls in pre-push are out of scope)
+- `branch-policy` — PR-only job; validates that the PR branch name matches `^issues-[0-9]+$`;
+  PRs with the `skip-branch-policy` label are allowed through for external contributors
+- `lint-commands` — validates every `commands/task_*.md` file against the structural rules
+  in `_contract.md` §6 using `scripts/lint_commands.py`; exits 0 on empty `commands/`
 - **Security posture** — every workflow job declares `permissions: contents: read`;
   every `uses:` is pinned to a 40-char commit SHA with a `# vX.Y.Z` comment; Dependabot
   (see `.github/dependabot.yml`) opens weekly PRs to bump pins
