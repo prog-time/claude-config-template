@@ -1,0 +1,12 @@
+# ruff configuration for claude-config-template
+# Scope: scripts/ only (Python utilities)
+# Rules: ruff defaults (E, F)
+# To add suppressions for follow-up violations, use per-file-ignores or extend-ignore below.
+
+[lint]
+# Default rule sets: E (pycodestyle errors), F (pyflakes) — ruff built-in defaults.
+# Do not add I, UP, B here; those belong to a follow-up task.
+
+[lint.per-file-ignores]
+# Add file-specific ignores here if baseline violations surface, e.g.:
+# "scripts/lint_skills.py" = ["E501"]
