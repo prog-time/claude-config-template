@@ -1,0 +1,20 @@
+{
+  "retryOn429": true,
+  "retryCount": 1,
+  "fallbackHttpStatus": [200, 206],
+  "ignorePatterns": [
+    { "pattern": "^https?://localhost" },
+    { "pattern": "^https?://127\\.0\\.0\\.1" },
+    { "pattern": "<YOUR_[A-Z_]+>" },
+    { "pattern": "example\\.com" },
+    { "pattern": "^mailto:" }
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept": "text/html"
+      }
+    }
+  ]
+}
