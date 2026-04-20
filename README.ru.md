@@ -19,6 +19,8 @@
 | `ruff` | любая | линтер Python (`pip install ruff`) |
 | `shfmt` | любая | форматтер bash-скриптов (`brew install shfmt` или `go install mvdan.cc/sh/v3/cmd/shfmt@latest`) |
 | `codespell` | любая | проверка опечаток в документации (`pip install codespell`) |
+| `jsonschema` | любая | валидация JSON-схемы (`pip install jsonschema`) — обязателен для pre-push |
+| `gitleaks` | любая | сканер секретов (`brew install gitleaks`) — опционален для pre-push |
 
 ## Структура
 
@@ -73,7 +75,22 @@ make lint
 ## Локальные проверки и pre-push
 
 Директория `linting/` содержит хук pre-push, который запускает те же проверки, что и CI:
-shellcheck, markdownlint, yamllint, ruff (линтер Python), shfmt (форматтер bash) и codespell (проверка опечаток).
+shellcheck, markdownlint, yamllint, ruff (линтер Python), shfmt (форматтер bash), codespell
+(проверка опечаток), валидация JSON (обязательна) и сканер секретов gitleaks (опционален).
+
+**JSON-валидация обязательна** — установите `jsonschema` перед первым пушем:
+
+```bash
+pip install jsonschema
+```
+
+**Сканирование секретов опционально** — если `gitleaks` не установлен, хук выводит
+предупреждение и продолжает работу. Для локального сканирования секретов установите:
+
+```bash
+brew install gitleaks          # macOS
+# Альтернатива через Docker: docker run zricethezav/gitleaks detect --source .
+```
 
 **Включить хук pre-push** — `make install` делает это автоматически, создавая симлинк
 в `.git/hooks/`. Ручная установка:
@@ -99,8 +116,14 @@ chmod +x .git/hooks/prepare-commit-msg
 
 ## CI
 
-GitHub Actions запускает `scripts/lint_skills.py` на каждый push и PR — проверяет,
-что у каждого `SKILL.md` валидный frontmatter и описание не превышает лимит.
+GitHub Actions запускает следующие проверки на каждый push и PR:
+
+- `skills` — `scripts/lint_skills.py` проверяет frontmatter всех скилов и агентов
+- `shellcheck` / `markdownlint` / `yamllint` / `ruff` / `shfmt` / `codespell` — стиль кода
+- `gitleaks` — сканирует всю историю коммитов PR на предмет секретов; плейсхолдеры
+  в примерах `mcp/` и документации внесены в allowlist `.gitleaks.toml`
+- `json-validate` — проверяет синтаксис всех JSON-файлов; `.claude/settings*.json`
+  валидируется по официальной схеме Claude Code settings
 
 ## Лицензия
 
