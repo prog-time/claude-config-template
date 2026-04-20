@@ -1,0 +1,43 @@
+# Gitleaks configuration for claude-config-template.
+# Extends gitleaks default ruleset and adds allowlists for placeholder values
+# that appear in example files and documentation.
+#
+# Usage:
+#   gitleaks detect --config .gitleaks.toml --redact
+#   gitleaks detect --config .gitleaks.toml --redact --source .
+
+title = "gitleaks config — claude-config-template"
+
+[extend]
+# Inherit all default gitleaks rules (AWS, GitHub PAT, generic high-entropy, etc.)
+useDefault = true
+
+[allowlist]
+description = "Placeholder values and example files"
+
+# Paths that are expected to contain placeholder tokens.
+# mcp/servers.json.example contains <YOUR_GITHUB_TOKEN> and <ABSOLUTE_PATH_TO_YOUR_DIRECTORY>.
+# docs/ and tasks/ may contain example API key strings in documentation.
+# skills/ and agents/ may contain sample key patterns in instructions.
+paths = [
+  "mcp/.*\\.example(\\.json)?$",
+  "mcp/servers\\.json\\.example",
+  "\\.env\\.example$",
+  "docs/.*",
+  "tasks/.*",
+  "skills/.*",
+  "agents/.*",
+]
+
+# Regex patterns for placeholder values used throughout example files.
+# These look like real secrets to pattern-matchers but are intentional stubs.
+regexes = [
+  # Angle-bracket placeholders: <YOUR_GITHUB_TOKEN>, <ABSOLUTE_PATH_TO_YOUR_DIRECTORY>
+  "<[A-Z][A-Z0-9_]*>",
+  # YOUR_* placeholders: YOUR_GITHUB_TOKEN, YOUR_API_KEY
+  "YOUR_[A-Z][A-Z0-9_]*",
+  # EXAMPLE_* placeholders: EXAMPLE_SECRET, EXAMPLE_TOKEN
+  "EXAMPLE_[A-Z][A-Z0-9_]*",
+  # REPLACE_WITH_* placeholders
+  "REPLACE_WITH_[A-Z][A-Z0-9_]*",
+]
