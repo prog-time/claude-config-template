@@ -44,3 +44,16 @@ if [ -f "$script" ]; then
   bash "$script"
   echo "----------"
 fi
+
+# Secret scanner — optional (gitleaks may not be installed locally).
+# If gitleaks is not installed, check_gitleaks_all.sh prints a warning and exits 0.
+script="$SCRIPT_DIR/check_scripts/check_gitleaks_all.sh"
+if [ -f "$script" ]; then
+  echo "Secret Scanner (gitleaks)..."
+  bash "$script"
+  echo "----------"
+fi
+
+echo "JSON Validator..."
+bash "$SCRIPT_DIR/check_scripts/check_json_validate_all.sh"
+echo "----------"
