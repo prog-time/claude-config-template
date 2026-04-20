@@ -126,9 +126,19 @@ GitHub Actions runs the following checks on every push and PR:
   examples and docs are allowlisted in `.gitleaks.toml`
 - `json-validate` — syntax-checks all JSON files; validates `.claude/settings*.json` against
   the official Claude Code settings schema
+- `install-e2e` — real end-to-end install run into an isolated `CLAUDE_HOME=$(mktemp -d)`;
+  asserts all category symlinks are created, `scripts/doctor.sh` exits 0, and
+  `install.sh --uninstall` removes every symlink cleanly; not run in the pre-push hook
+  (network-free, real-symlink setup is out of scope locally)
+- `link-check` — checks all links in `README.md`, `README.ru.md`, `CONTRIBUTING.md`,
+  `docs/**/*.md`, `skills/**/*.md`, `agents/**/*.md` using `markdown-link-check`;
+  `tasks/**` is excluded; ignore patterns and retry policy are in `.markdown-link-check.json`;
+  not run in the pre-push hook (network calls in pre-push are out of scope)
 - **Security posture** — every workflow job declares `permissions: contents: read`;
   every `uses:` is pinned to a 40-char commit SHA with a `# vX.Y.Z` comment; Dependabot
   (see `.github/dependabot.yml`) opens weekly PRs to bump pins
+
+See [`.github/workflows/lint.yml`](.github/workflows/lint.yml) for the full workflow definition.
 
 ## License
 
