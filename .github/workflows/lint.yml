@@ -135,3 +135,63 @@ jobs:
             echo "yamllint found issues!"
             exit 1
           fi
+
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Run ruff
+        run: |
+          set -euo pipefail
+          py_files=$(find scripts/ -name "*.py" -not -path "*/__pycache__/*")
+          if [ -z "$py_files" ]; then
+            echo "No Python files found in scripts/. Skipping."
+            exit 0
+          fi
+          # shellcheck disable=SC2086
+          ruff check $py_files
+
+  shfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shfmt
+        run: |
+          curl -sSL https://github.com/mvdan/sh/releases/download/v3.10.0/shfmt_v3.10.0_linux_amd64 \
+            -o /usr/local/bin/shfmt
+          chmod +x /usr/local/bin/shfmt
+          shfmt --version
+      - name: Run shfmt
+        run: |
+          set -euo pipefail
+          # Scope: linting/**/*.sh, excluding linting/preparation/ (pre-existing violations).
+          # Baseline suppressions: install.sh, scripts/*.sh, and linting/preparation/*.sh
+          # have pre-existing formatting violations. See follow-up tasks for fixes.
+          sh_files=$(find linting/ -name "*.sh" \
+            -not -path "*/preparation/*" \
+            -not -path "./_site/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./.git/*")
+          if [ -z "$sh_files" ]; then
+            echo "No shell script files found in linting/. Skipping."
+            exit 0
+          fi
+          # shellcheck disable=SC2086
+          shfmt -d -i 2 -ci $sh_files
+
+  codespell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install codespell
+        run: pip install codespell
+      - name: Run codespell
+        run: codespell skills/ agents/ docs/ README.md README.ru.md CONTRIBUTING.md

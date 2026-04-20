@@ -18,6 +18,18 @@ echo "YML/YAML Checker..."
 bash "$SCRIPT_DIR/check_scripts/check_yamllint_all.sh"
 echo "----------"
 
+echo "Python Linter (ruff)..."
+bash "$SCRIPT_DIR/check_scripts/check_ruff_all.sh"
+echo "----------"
+
+echo "Shell Formatter (shfmt)..."
+bash "$SCRIPT_DIR/check_scripts/check_shfmt_all.sh"
+echo "----------"
+
+echo "Spell Checker (codespell)..."
+bash "$SCRIPT_DIR/check_scripts/check_codespell_all.sh"
+echo "----------"
+
 # Optional checks — only run if the scripts are present
 script="$SCRIPT_DIR/check_scripts/check_htmlhint_all.sh"
 if [ -f "$script" ]; then

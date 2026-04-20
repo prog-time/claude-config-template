@@ -17,6 +17,9 @@ is added by you.
 | `claude` CLI | any | runtime environment |
 | Python | 3.12+ | `scripts/lint_skills.py` and CI |
 | `gh` CLI | any | optional, useful for GitHub-integrated skills |
+| `ruff` | any | Python linter (`pip install ruff`) |
+| `shfmt` | any | shell formatter (`brew install shfmt` or `go install mvdan.cc/sh/v3/cmd/shfmt@latest`) |
+| `codespell` | any | spell checker for docs (`pip install codespell`) |
 
 ## Structure
 
@@ -72,7 +75,7 @@ the full workflow and frontmatter specification.
 ## Local checks and pre-push
 
 The `linting/` directory provides a pre-push hook that runs the same checks as CI locally:
-shellcheck, markdownlint, and yamllint.
+shellcheck, markdownlint, yamllint, ruff (Python), shfmt (shell formatter), and codespell (spell check).
 
 **Enable the pre-push hook** — `make install` does this automatically by creating a symlink
 in `.git/hooks/`. To set it up manually:
