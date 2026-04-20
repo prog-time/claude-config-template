@@ -157,7 +157,23 @@ chmod +x .git/hooks/prepare-commit-msg
 
 GitHub Actions runs the following checks on every push and PR:
 `skills`, `shellcheck`, `markdownlint`, `yamllint`, `ruff`, `shfmt`, `codespell`,
-`gitleaks` (secret scan), and `json-validate` (syntax + schema).
+`gitleaks` (secret scan), `json-validate` (syntax + schema), `install-e2e`
+(real install run), and `link-check` (Markdown link validation).
+
+Two content-integrity jobs run in CI only — they are not part of the pre-push hook:
+
+- **`install-e2e`** — runs `install.sh` for real into an isolated `CLAUDE_HOME=$(mktemp -d)`,
+  asserts every symlink in `skills/`, `agents/`, `commands/`, `hooks/` is created,
+  runs `scripts/doctor.sh`, then runs `install.sh --uninstall` and asserts all symlinks
+  are gone. New skills and agents are picked up automatically — no changes to the job
+  needed. Not in pre-push: real symlinks and network access are out of scope locally.
+- **`link-check`** — runs `markdown-link-check` over all published `.md` files
+  (`README.md`, `README.ru.md`, `CONTRIBUTING.md`, `docs/**/*.md`, `skills/**/*.md`,
+  `agents/**/*.md`). `tasks/**` is excluded. Ignore patterns for placeholders and
+  localhost URLs, plus a retry policy for 429/503, are configured in
+  `.markdown-link-check.json`. Not in pre-push: network calls in pre-push are out of scope.
+  When adding `.md` files with placeholder links (e.g. `<YOUR_REPO_URL>`), add a matching
+  pattern to `.markdown-link-check.json` so the CI job does not treat them as broken links.
 
 Reproduce locally:
 

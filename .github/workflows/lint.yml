@@ -320,3 +320,122 @@ jobs:
         run: bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
       - name: Run actionlint
         run: ./actionlint -color .github/workflows/*.yml
+
+  install-e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run install.sh into isolated CLAUDE_HOME
+        run: |
+          set -euo pipefail
+          CLAUDE_HOME="$(mktemp -d)"
+          export CLAUDE_HOME
+          echo "CLAUDE_HOME=$CLAUDE_HOME" >> "$GITHUB_ENV"
+
+          bash install.sh
+
+          # Save the list of expected symlinks to a tmp file for the uninstall assert step.
+          # We collect them now — while the repo state is fixed — so the second step
+          # doesn't depend on directory enumeration after checkout could theoretically change.
+          SYMLINK_LIST="$(mktemp)"
+          echo "SYMLINK_LIST=$SYMLINK_LIST" >> "$GITHUB_ENV"
+
+          shopt -s nullglob
+          ERRORS=0
+          for cat in skills agents commands hooks; do
+            for entry in "$cat"/*; do
+              name="$(basename "$entry")"
+              dst="$CLAUDE_HOME/$cat/$name"
+              if ! test -L "$dst"; then
+                echo "missing symlink: $dst (expected symlink for $cat/$name)"
+                ERRORS=$((ERRORS + 1))
+              else
+                # Record for uninstall assertion
+                echo "$dst" >> "$SYMLINK_LIST"
+              fi
+            done
+          done
+          shopt -u nullglob
+
+          if [ "$ERRORS" -ne 0 ]; then
+            echo "$ERRORS symlink(s) missing after install — see above"
+            exit 1
+          fi
+          echo "All category symlinks verified."
+
+      - name: Assert pre-push hook symlink
+        run: |
+          set -euo pipefail
+          # install.sh links linting/pre-push-check.sh into .git/hooks/pre-push (the repo's
+          # own git hooks dir), not into $CLAUDE_HOME/hooks/.
+          if [ -d .git/hooks ]; then
+            dst=".git/hooks/pre-push"
+            if ! test -L "$dst"; then
+              echo "missing symlink: $dst (expected pre-push hook symlink)"
+              exit 1
+            fi
+            echo "pre-push hook symlink OK: $dst"
+          else
+            echo "pre-push hook step skipped: no .git/hooks"
+          fi
+
+      - name: Run doctor.sh
+        run: |
+          set -euo pipefail
+          if ! output="$(bash scripts/doctor.sh 2>&1)"; then
+            echo "doctor.sh exited non-zero. Full output:"
+            echo "$output"
+            exit 1
+          fi
+          echo "$output"
+
+      - name: Uninstall and assert cleanup
+        run: |
+          set -euo pipefail
+          bash install.sh --uninstall
+
+          ERRORS=0
+          while IFS= read -r dst; do
+            if test -e "$dst" || test -L "$dst"; then
+              echo "symlink not removed after uninstall: $dst"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done < "$SYMLINK_LIST"
+
+          if [ "$ERRORS" -ne 0 ]; then
+            echo "$ERRORS symlink(s) still present after uninstall — see above"
+            exit 1
+          fi
+          echo "All symlinks removed by uninstall."
+
+  link-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+      - name: Check links in Markdown files
+        run: |
+          set -euo pipefail
+          mapfile -t md_files < <(find README.md README.ru.md CONTRIBUTING.md docs skills agents \
+            -type f -name "*.md" \
+            -not -path "*/tasks/*" \
+            2>/dev/null || true)
+          if [ ${#md_files[@]} -eq 0 ]; then
+            echo "No Markdown files found — skipping."
+            exit 0
+          fi
+          ERRORS=0
+          for file in "${md_files[@]}"; do
+            echo "Checking $file..."
+            markdown-link-check --config .markdown-link-check.json --quiet "$file" || ERRORS=$((ERRORS + 1))
+          done
+          if [ "$ERRORS" -ne 0 ]; then
+            echo "$ERRORS file(s) have broken links — see above"
+            exit 1
+          fi
+          echo "All links OK."
