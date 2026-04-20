@@ -167,6 +167,11 @@ make check          # lint + dry-run install
 bash linting/pre-push-check.sh   # full pre-push suite including JSON + gitleaks
 ```
 
+When adding a new GitHub Action, pin it to a 40-char commit SHA with a `# vX.Y.Z`
+comment (e.g. `uses: owner/action@<sha> # v1.2.3`). Dependabot will keep the pin
+fresh via weekly PRs. Declare per-job `permissions: contents: read` so forks inherit
+a safe default `GITHUB_TOKEN` scope.
+
 ---
 
 ## What should NOT go into the template
